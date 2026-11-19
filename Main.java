@@ -62,6 +62,7 @@ class MemoryGame {
                 secondsElapsed++;
                 if (secondsElapsed >= gameDuration) {
                     System.out.println("Time's up! Game over.");
+                    System.out.println("Your final score: " + playerScore); // added for testing
                     endGame();
                 }
             }
@@ -126,8 +127,8 @@ class MemoryGame {
         System.out.println("Congratulations! You found all the matches.");
         System.out.println("Your final score: " + playerScore);
         System.out.println("Time elapsed: " + secondsElapsed + " seconds");
-        endGame();
         scanner.close();
+        endGame();
     }
 
     private boolean checkForMatch(Tile tile) {
