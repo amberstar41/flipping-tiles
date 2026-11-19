@@ -12,10 +12,12 @@ import java.util.TimerTask;
 class Tile {
     private char symbol;
     private boolean flipped;
+    private boolean matched;
 
     public Tile(char symbol) {
         this.symbol = symbol;
         this.flipped = false;
+        this.matched = false;
     }
 
     public char getSymbol() {
@@ -28,6 +30,14 @@ class Tile {
 
     public void setFlipped(boolean flipped) {
         this.flipped = flipped;
+    }
+
+    public boolean isMatched() {
+        return matched;
+    }
+
+    public void setMatched(boolean matched) {
+        this.matched = matched;
     }
 }
 
@@ -46,7 +56,7 @@ class BoardModel {
         flipsRemaining = 2; // Set the number of allowed flips per turn
         playerScore = 0;
         secondsElapsed = 0;
-        gameDuration = 60; // Set the game duration in seconds
+        gameDuration = 120; // Set the game duration in seconds INCREASED FOR TESTING
     }
 
     public void initializeTiles(int pairs) {
@@ -120,12 +130,25 @@ class BoardModel {
     }
 
     public void flipTile(Tile tile) {
+        if (tile.isMatched()) {
+            return;
+        }
+
         tile.setFlipped(true);
         flipsRemaining--;
         if (checkForMatch(tile)) {
             System.out.println("Match found!");
             matchesFound++;
             playerScore++;
+
+            for (Tile t : tiles) {
+                if (t.isFlipped() &&
+                    t.getSymbol() == tile.getSymbol()) {
+                    t.setMatched(true);
+                }
+            }
+            flipsRemaining = 2; 
+
         } else if (flipsRemaining == 0) {
             System.out.println("No match. Out of flips. Next turn.");
             resetFlippedTiles();
@@ -138,7 +161,7 @@ class BoardModel {
     private boolean checkForMatch(Tile tile) {
         int count = 0;
         for (Tile t : tiles) {
-            if (t.isFlipped() && t.getSymbol() == tile.getSymbol()) {
+            if (t.isFlipped() && !t.isMatched() && t.getSymbol() == tile.getSymbol()) {
                 count++;
             }
         }
@@ -150,7 +173,7 @@ class BoardModel {
 
     private void resetFlippedTiles() {
         for (Tile tile : tiles) {
-            if (tile.isFlipped()) {
+            if (!tile.isMatched()) {
                 tile.setFlipped(false);
             }
         }
