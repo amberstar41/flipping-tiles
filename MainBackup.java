@@ -185,7 +185,7 @@ class MemoryGame {
     }
 }
 
-public class Main {
+public class MainBackup {
     public static void main(String[] args) {
         MemoryGame game = new MemoryGame();
         game.initializeTiles(6); // Change the number of pairs as per your preference

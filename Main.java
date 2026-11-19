@@ -1,9 +1,13 @@
+// this part of the code has been modified
+// added more imports
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
+
+// everything that isn't in the view class is in model?
 
 class Tile {
     private char symbol;
@@ -27,7 +31,7 @@ class Tile {
     }
 }
 
-class MemoryGame {
+class BoardModel {
     private List<Tile> tiles;
     private int matchesFound;
     private int flipsRemaining;
@@ -36,7 +40,7 @@ class MemoryGame {
     private int secondsElapsed;
     private int gameDuration;
 
-    public MemoryGame() {
+    public BoardModel() {
         tiles = new ArrayList<>();
         matchesFound = 0;
         flipsRemaining = 2; // Set the number of allowed flips per turn
@@ -51,6 +55,10 @@ class MemoryGame {
             tiles.add(new Tile(symbol));
         }
         Collections.shuffle(tiles);
+    }
+
+    public List<Tile> getTiles() {
+        return tiles;
     }
 
     public void play() {
@@ -68,67 +76,63 @@ class MemoryGame {
             }
         }, 1000, 1000);
 
+        // this section of code has been modified and moved to controller
         while (matchesFound < tiles.size() / 2) {
-            displayBoard();
-            System.out.println("Enter the tile number to flip, 'q' to quit, or 'r' to restart: ");
-            String input = scanner.nextLine();
-            if (input.equalsIgnoreCase("q")) {
-                System.out.println("Quitting the game. Goodbye!");
-                endGame();
-                timer.cancel();
-                return;
-            } else if (input.equalsIgnoreCase("r")) {
-                System.out.println("Restarting the game...");
-                timer.cancel();
-                restartGame();
-                timer = new Timer();
-                timer.scheduleAtFixedRate(new TimerTask() {
-                    @Override
-                    public void run() {
-                        secondsElapsed++;
-                        if (secondsElapsed >= gameDuration) {
-                            System.out.println("Time's up! Game over.");
-                            endGame();
-                        }
-                    }
-                }, 1000, 1000);
+
+            TextView.displayBoard(this);
+
+            if (GameController.control(this, scanner)) {
                 continue;
-            }
-            int tileIndex;
-            try {
-                tileIndex = Integer.parseInt(input);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a tile number.");
-                continue;
-            }
-            if (tileIndex < 0 || tileIndex >= tiles.size()) {
-                System.out.println("Invalid tile number. Please enter a valid tile number.");
-                continue;
-            }
-            Tile tile = tiles.get(tileIndex);
-            if (tile.isFlipped()) {
-                System.out.println("Tile already flipped. Try again.");
             } else {
-                tile.setFlipped(true);
-                flipsRemaining--;
-                if (checkForMatch(tile)) {
-                    System.out.println("Match found!");
-                    matchesFound++;
-                    playerScore++;
-                } else if (flipsRemaining == 0) {
-                    System.out.println("No match. Out of flips. Next turn.");
-                    resetFlippedTiles();
-                    flipsRemaining = 2; // Reset the flips remaining for the next turn
-                } else {
-                    System.out.println("No match. Try again.");
-                }
+                return;
             }
+            
         }
+
         System.out.println("Congratulations! You found all the matches.");
         System.out.println("Your final score: " + playerScore);
         System.out.println("Time elapsed: " + secondsElapsed + " seconds");
         scanner.close();
         endGame();
+    }
+
+    public void quit() {
+        System.out.println("Quitting the game. Goodbye!");
+        endGame();
+        timer.cancel();
+    }
+    
+    public void restart() {
+        System.out.println("Restarting the game...");
+        timer.cancel();
+        restartGame();
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                secondsElapsed++;
+                if (secondsElapsed >= gameDuration) {
+                    System.out.println("Time's up! Game over.");
+                    endGame();
+                }
+            }
+        }, 1000, 1000);    
+    }
+
+    public void flipTile(Tile tile) {
+        tile.setFlipped(true);
+        flipsRemaining--;
+        if (checkForMatch(tile)) {
+            System.out.println("Match found!");
+            matchesFound++;
+            playerScore++;
+        } else if (flipsRemaining == 0) {
+            System.out.println("No match. Out of flips. Next turn.");
+            resetFlippedTiles();
+            flipsRemaining = 2; // Reset the flips remaining for the next turn
+        } else {
+            System.out.println("No match. Try again.");
+        }
     }
 
     private boolean checkForMatch(Tile tile) {
@@ -141,27 +145,8 @@ class MemoryGame {
         return count == 2;
     }
 
-    private void displayBoard() {
-        System.out.println("\n------- Memory Game -------");
-        System.out.print("   ");
-        for (int i = 0; i < tiles.size(); i++) {
-            System.out.print(i + "\t");
-        }
-        System.out.println();
-        for (int i = 0; i < tiles.size(); i++) {
-            if (i % 6 == 0) {
-                System.out.println();
-                System.out.print(i / 6 + "  ");
-            }
-            Tile tile = tiles.get(i);
-            if (tile.isFlipped()) {
-                System.out.print(tile.getSymbol() + "\t");
-            } else {
-                System.out.print("[" + i + "]\t");
-            }
-        }
-        System.out.println("\n---------------------------");
-    }
+    // private void displayBoard()
+    // this got exactly 1-1 moved to viewer class
 
     private void resetFlippedTiles() {
         for (Tile tile : tiles) {
@@ -185,9 +170,69 @@ class MemoryGame {
     }
 }
 
+// this is the view secion of the architecture
+// this section of code has been modified
+class TextView {
+    public static void displayBoard(BoardModel model) {
+        System.out.println("\n------- Memory Game -------");
+        System.out.print("   ");
+        for (int i = 0; i < model.getTiles().size(); i++) {
+            System.out.print(i + "\t");
+        }
+        System.out.println();
+        for (int i = 0; i < model.getTiles().size(); i++) {
+            if (i % 6 == 0) {
+                System.out.println();
+                System.out.print(i / 6 + "  ");
+            }
+            Tile tile = model.getTiles().get(i);
+            if (tile.isFlipped()) {
+                System.out.print(tile.getSymbol() + "\t");
+            } else {
+                System.out.print("[" + i + "]\t");
+            }
+        }
+        System.out.println("\n---------------------------");
+        System.out.println("Enter the tile number to flip, 'q' to quit, or 'r' to restart: ");
+    }
+}
+
+// this is the controller for the code
+// this section of code has been modified
+class GameController {
+    public static boolean control(BoardModel model, Scanner scanner) {
+        String input = scanner.nextLine();
+        if (input.equalsIgnoreCase("q")) {
+            model.quit();
+            return false;
+        } else if (input.equalsIgnoreCase("r")) {
+            model.restart();
+            return true;
+        }
+        int tileIndex;
+        try {
+            tileIndex = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a tile number.");
+            return true;
+        }
+        if (tileIndex < 0 || tileIndex >= model.getTiles().size()) {
+            System.out.println("Invalid tile number. Please enter a valid tile number.");
+            return true;
+        }
+        Tile tile = model.getTiles().get(tileIndex);
+        if (tile.isFlipped()) {
+            System.out.println("Tile already flipped. Try again.");
+        } else {
+            model.flipTile(tile);
+        }
+        return true;
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
-        MemoryGame game = new MemoryGame();
+        BoardModel game = new BoardModel();
         game.initializeTiles(6); // Change the number of pairs as per your preference
         game.play();
     }
