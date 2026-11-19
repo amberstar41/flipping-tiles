@@ -1,3 +1,4 @@
+
 // this part of the code has been modified
 // added more imports
 import java.util.ArrayList;
@@ -13,11 +14,13 @@ class Tile {
     private char symbol;
     private boolean flipped;
     private boolean matched;
+    private boolean seen;
 
     public Tile(char symbol) {
         this.symbol = symbol;
         this.flipped = false;
         this.matched = false;
+        this.seen = false;
     }
 
     public char getSymbol() {
@@ -39,6 +42,15 @@ class Tile {
     public void setMatched(boolean matched) {
         this.matched = matched;
     }
+
+    // Track seen status of each card
+    public boolean isSeen() {
+        return seen;
+    }
+
+    public void setSeen(boolean seen) {
+        this.seen = seen;
+    }
 }
 
 class BoardModel {
@@ -49,6 +61,7 @@ class BoardModel {
     private Timer timer;
     private int secondsElapsed;
     private int gameDuration;
+    private boolean firstTilePreviouslySeen;
 
     public BoardModel() {
         tiles = new ArrayList<>();
@@ -57,6 +70,12 @@ class BoardModel {
         playerScore = 0;
         secondsElapsed = 0;
         gameDuration = 120; // Set the game duration in seconds INCREASED FOR TESTING
+        firstTilePreviouslySeen = false;
+    }
+
+    // Get player score
+    public int getPlayerScore() {
+        return playerScore;
     }
 
     public void initializeTiles(int pairs) {
@@ -96,7 +115,7 @@ class BoardModel {
             } else {
                 return;
             }
-            
+
         }
 
         System.out.println("Congratulations! You found all the matches.");
@@ -111,7 +130,7 @@ class BoardModel {
         endGame();
         timer.cancel();
     }
-    
+
     public void restart() {
         System.out.println("Restarting the game...");
         timer.cancel();
@@ -126,7 +145,7 @@ class BoardModel {
                     endGame();
                 }
             }
-        }, 1000, 1000);    
+        }, 1000, 1000);
     }
 
     public void flipTile(Tile tile) {
@@ -134,25 +153,58 @@ class BoardModel {
             return;
         }
 
+        // Check if this tile was ALREADY seen before this flip
+        boolean wasAlreadySeen = tile.isSeen();
+        if (flipsRemaining == 2) {
+            firstTilePreviouslySeen = wasAlreadySeen;
+        }
+
         tile.setFlipped(true);
+        // seen status
+        tile.setSeen(true);
         flipsRemaining--;
         if (checkForMatch(tile)) {
-            System.out.println("Match found!");
+            System.out.println("Match found! (+10 points!)");
             matchesFound++;
-            playerScore++;
+            playerScore += 10; // points earned only if card match
 
             for (Tile t : tiles) {
                 if (t.isFlipped() &&
-                    t.getSymbol() == tile.getSymbol()) {
+                        t.getSymbol() == tile.getSymbol()) {
                     t.setMatched(true);
                 }
             }
-            flipsRemaining = 2; 
+            flipsRemaining = 2;
 
         } else if (flipsRemaining == 0) {
-            System.out.println("No match. Out of flips. Next turn.");
+            // Deduct points ONLY if seen cards are not correctly matched
+            int penalty = 0;
+            if (firstTilePreviouslySeen) {
+                penalty += 2;
+            }
+            if (wasAlreadySeen) {
+                penalty += 2;
+            }
+            playerScore -= penalty;
+
+            if (penalty > 0) {
+                System.out.println("No match! Missed seen card(s): -" + penalty + " points.");
+            } else {
+                System.out.println("No match. Out of flips. Next turn.");
+            }
+
+            // Shows both flipped cards for a second so it doesnt
+            // reset immediately, so you can see both letters.
+            TextView.displayBoard(this);
+            try {
+                Thread.sleep(1500); // Pause 1.5 seconds so you can see the 2nd card
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
             resetFlippedTiles();
             flipsRemaining = 2; // Reset the flips remaining for the next turn
+            firstTilePreviouslySeen = false;
         } else {
             System.out.println("No match. Try again.");
         }
@@ -185,6 +237,7 @@ class BoardModel {
         flipsRemaining = 2;
         playerScore = 0;
         secondsElapsed = 0;
+        firstTilePreviouslySeen = false;
         initializeTiles(6); // Change the number of pairs as per your preference
     }
 
@@ -198,6 +251,8 @@ class BoardModel {
 class TextView {
     public static void displayBoard(BoardModel model) {
         System.out.println("\n------- Memory Game -------");
+        // Display the score and the board
+        System.out.println("Score: " + model.getPlayerScore());
         System.out.print("   ");
         for (int i = 0; i < model.getTiles().size(); i++) {
             System.out.print(i + "\t");
