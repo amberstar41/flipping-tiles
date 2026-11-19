@@ -1,0 +1,39 @@
+Need to create diagrams apparently 
+Part of it needs to look good
+Jframe
+Model - checks everything
+Controller - glue between model and view, how they communicate, abstraction layer
+View - what the user interacts with 
+Needs multiple views
+Documentation- 
+Discussing what we need to do first
+Looking through the provided code, trying to figure out how to split things up
+Decided that memorygame is too long, it's doing heavy lifting with game functionality. It controls the basic game functions, but also game rules, displays, etc. 
+Memorygame needs to be reorganized into the preexisting classes or into a new section
+Majority of play method either in view or controller, then rest of memory game goes to model
+Interactive -> view
+Connection between two -> controller
+We noticed some issues in the game functionality- cards aren't flipped back when match not found
+Trying to fix some bugs so we can properly do the project 
+Deciding what we do form here
+Teddy fixes bugs 
+
+
+3 classes
+Model-
+
+Implement a point system for the game.
+a. Seen status of each card needs to be tracked
+b. Points should only be earned when cards are matched
+c. Points should be reduced only if seen cards are not correctly matched
+d. You can choose a reasonable scoring system.
+
+
+View-
+// 2 views
+// 1 for text 
+// 1 for J-frame - buttons
+
+Controller-
+
+Connect model to view
